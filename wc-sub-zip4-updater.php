@@ -91,7 +91,7 @@ function run_usps_updater_v6() {
             ) );
         }
         WP_CLI::line( "------------------------------------------------------" );
-        WP_CLI::success( "Full audit of $count subscriptions complete. ($already_standardized_count subscriptions already have ZIP+4 and were skipped.)" );
+        WP_CLI::success( "Found $count subscriptions to be updated and skipped $already_standardized_count subscriptions that already have ZIP+4.)" );
         return;
 
     } else {
