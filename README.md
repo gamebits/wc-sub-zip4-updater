@@ -1,2 +1,119 @@
-# wc-sub-zip4-updater
-A script for updating WooCommerce Subscriptions to use USPS ZIP+4 mailing addresses
+# WooCommerce Subscriptions ZIP+4 Updater
+
+This WordPress script identifies any USA-based [WooCommerce Subscriptions](https://woocommerce.com/products/woocommerce-subscriptions/), then queries the [USPS Address Validation API](https://developers.usps.com/addressesv3) to update the subscription's mailing address to use the [ZIP+4](https://tools.usps.com/zip-code-lookup.htm?byaddress) format.
+
+## But why?
+
+Standard five-digit ZIP codes are efficient, but the ZIP+4 system (introduced by the United States Postal Service in [1983](https://facts.usps.com/decoding-the-zip-code/)) acts as a high-definition GPS for mail sorting. While mail will usually arrive with just five digits, the extra four digits significantly optimize the "last mile" of delivery.
+
+When the four optional digits are are appended to the ZIP code, USPS machines can automatically sort your mail into the exact order of the mail carrier's route (known as "[walk sequence](https://pe.usps.com/archive/html/dmmarchive20030810/M050.htm)"). Without it, a piece of mail may require manual sorting at the local post office, which adds time and increases the margin for human error.
+
+## Configuration
+
+Before running the script, configure it to your specifications:
+
+### USPS API
+
+You'll need a USPS API key and API secret, both of which are available from the [USPS Developer Portal](https://developers.usps.com/user/apps). If you are already using the [USPS Shipping Method](https://woocommerce.com/products/usps-shipping-method/) extension for WooCommerce, then you likely already have these credentials at `/wp-admin/admin.php?page=wc-settings&tab=shipping&section=usps`.
+
+Provide these credentials in lines 16–17 of the script.
+
+### API limits
+
+As of January 2026, USPS API calls are rate-limited to [60 per hour](https://www.smarty.com/blog/usps-api-rate-limit). To ensure this limit is not exceeded (which would cause the API key to be blocked), the script pauses for 62 seconds between each query. If you are one of the elite few who has a higher threshold on your developer account, this rate can be adjusted on line 62.
+
+Unfortunately, since most users will be rate-limited, this does mean updating 600 subscribers would take over 10 hours. Fortunately, the script can be run in batches, picking up where it left off.
+
+### Targeting
+
+WooCommerce stores subscriptions in one of [six states](https://woocommerce.com/document/subscriptions/statuses/):
+
+* Active
+* Pending
+* On Hold
+* Pending Cancellation
+* Cancelled
+* Expired
+
+Depending on which subscriptions you want the script to target, update line 11 of the script with one of the following values:
+
+1. Active subscriptions only
+2. Pending, On Hold, Pending Cancellation, Cancelled & Expired subscriptions only
+3. All subscriptions
+
+The script defaults to active only.
+
+### Dry run
+
+The script can output a list of all subscriptions and addresses that need their ZIP codes updated to ZIP+4 without querying the USPS API or making any database updates. This report culminates in a summary such as the following:
+
+> Success: Full audit of 123 subscriptions complete. (45 subscriptions already have ZIP+4 and were skipped.)
+
+The script defaults to a dry run. Change line 14 to `false` for the script to actually update the addresses.
+
+## Usage
+
+Take a backup of your database, then upload the script via SFTP or nano to your shell environment and run this SSH command:
+
+`wp eval-file wc-sub-zip4-updater.php`
+
+A log of changes will be displayed in the terminal window and, if possible, saved in `/tmp/usps_update_log.txt`.
+
+## Secondary addresses
+
+If an address has a secondary field, such as an apartment number, that data should be stored in the "Address 2" field. If the customer instead appended it to the "Address 1" field, this script will not return a valid ZIP+4 code.
+
+The following script can identify many active subscriptions that have information included in the "Address 1" field that should be moved to "Address 2":
+
+```
+<?php
+/**
+ * Passive Audit: Identifies ACTIVE US subscriptions with Unit Info in Address 1.
+ * Logic: Uses word boundaries to avoid false positives like "Flower" or "Sterling."
+ */
+function audit_active_unit_issues_v2() {
+    global $wpdb;
+
+    // Use [[:<:]] and [[:>:]] for MySQL word boundaries (compatible with older/standard versions)
+    // This ensures 'Ste' matches 'Ste 100' but NOT 'Sterling'
+    $sql_search = "oa.address_1 REGEXP '[[:<:]](Apt|Unit|Ste|Suite|Bldg|Floor|Fl)[[:>:]]' OR oa.address_1 LIKE '%#%'";
+
+    $results = $wpdb->get_results("
+        SELECT oa.order_id, oa.address_1, oa.postcode 
+        FROM {$wpdb->prefix}wc_order_addresses oa
+        INNER JOIN {$wpdb->prefix}wc_orders o ON oa.order_id = o.id
+        WHERE o.type = 'shop_subscription'
+        AND o.status = 'wc-active'
+        AND oa.address_type = 'shipping'
+        AND oa.country IN ('US', 'USA', 'United States')
+        AND ($sql_search)
+    ");
+
+    if ( empty( $results ) ) {
+        WP_CLI::success( "No active subscriptions found with unit designators in Address 1." );
+        return;
+    }
+
+    WP_CLI::line( sprintf( "Found %d active subscriptions for manual review:", count( $results ) ) );
+    WP_CLI::line( str_repeat('-', 60) );
+    WP_CLI::line( sprintf( "%-10s | %-30s | %-10s", "Sub ID", "Address 1", "ZIP" ) );
+    WP_CLI::line( str_repeat('-', 60) );
+
+    foreach ( $results as $row ) {
+        WP_CLI::log( sprintf( 
+            "%-10d | %-30s | %-10s", 
+            $row->order_id, 
+            $row->address_1, 
+            $row->postcode 
+        ) );
+    }
+    WP_CLI::line( str_repeat('-', 60) );
+    WP_CLI::success( "Audit complete. Use these IDs to manually move unit info to Address 2." );
+}
+
+audit_active_unit_issues_v2();
+```
+
+## Credit
+
+This script was entirely vibecoded with [Google Gemini](https://gemini.google.com/) and is available under a GNU General Public License (GPL) v2.0.
