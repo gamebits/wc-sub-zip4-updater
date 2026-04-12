@@ -17,7 +17,7 @@ Plugins exist to validate addresses when orders are submitted, whereas this scri
 * WooCommerce Subscriptions 5.0+ (March 2023 or later)
 * High-Performance Order Storage ([HPOS](https://woocommerce.com/document/high-performance-order-storage/)) enabled (w/ or w/o [compatibility mode](https://woocommerce.com/document/high-performance-order-storage/#synchronization))
 * PHP 7.4+ (November 2019 or later)
-* MySQL 5.7+ (October 2015 or later)
+* MySQL 5.7+ (October 2015 or later) or MariaDB 10.3+ (April 2017 or later)
 * USPS API v3 / OAuth 2.0 (January 2026 or later)
 * SSH access
 
