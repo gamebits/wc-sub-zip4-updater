@@ -8,10 +8,10 @@ function run_usps_updater() {
 
     // --- MANUAL CONFIGURATION ---
     // 1 = Active Only | 2 = Non-Active Only | 3 = ALL Subscriptions
-    $target_mode    = 1;      
+    $target_mode    = 1;
 
     // true = Full Audit (No changes) | false = Live Updates
-    $is_dry_run     = false;   
+    $is_dry_run     = false;
 
     $client_id     = 'CLIENT_ID';
     $client_secret = 'CLIENT_SECRET';
@@ -50,10 +50,10 @@ function run_usps_updater() {
         AND oa.postcode REGEXP '^[0-9]{5}$'
         AND oa.postcode NOT LIKE '%-%'
         AND (
-            (oa.address_type = 'shipping' AND oa.address_1 != '') 
-            OR 
+            (oa.address_type = 'shipping' AND oa.address_1 != '')
+            OR
             (oa.address_type = 'billing' AND NOT EXISTS (
-                SELECT 1 FROM {$wpdb->prefix}wc_order_addresses 
+                SELECT 1 FROM {$wpdb->prefix}wc_order_addresses
                 WHERE order_id = o.id AND address_type = 'shipping' AND address_1 != ''
             ))
         )
@@ -61,7 +61,7 @@ function run_usps_updater() {
 
     // 3. Count existing ZIP+4 (Standardized) based on the same priority logic
     $already_standardized_count = $wpdb->get_var("
-        SELECT COUNT(DISTINCT o.id) 
+        SELECT COUNT(DISTINCT o.id)
         FROM {$wpdb->prefix}wc_orders o
         INNER JOIN {$wpdb->prefix}wc_order_addresses oa ON o.id = oa.order_id
         WHERE o.type = 'shop_subscription'
@@ -69,10 +69,10 @@ function run_usps_updater() {
         AND oa.country = 'US'
         AND oa.postcode LIKE '%-%'
         AND (
-            (oa.address_type = 'shipping' AND oa.address_1 != '') 
-            OR 
+            (oa.address_type = 'shipping' AND oa.address_1 != '')
+            OR
             (oa.address_type = 'billing' AND NOT EXISTS (
-                SELECT 1 FROM {$wpdb->prefix}wc_order_addresses 
+                SELECT 1 FROM {$wpdb->prefix}wc_order_addresses
                 WHERE order_id = o.id AND address_type = 'shipping' AND address_1 != ''
             ))
         )
@@ -93,7 +93,7 @@ function run_usps_updater() {
         WP_CLI::line( "Pending Update (5-digit):     $count" );
         WP_CLI::line( "Estimated Live Run Time:      {$hours}h {$minutes}m" );
         WP_CLI::line( "------------------------------------------------------" );
-        
+
         $i = 0;
         foreach ( $subscription_ids as $sub_id ) {
             $subscription = wc_get_order( $sub_id );
@@ -101,11 +101,11 @@ function run_usps_updater() {
 
             $is_shipping = ! empty( $subscription->get_shipping_address_1() );
             $prefix      = $is_shipping ? 'shipping' : 'billing';
-            
-            WP_CLI::log( sprintf( 
-                "[%d/%d] ID: %-7d | Source: %-8s | ZIP: %s | Addr: %s", 
-                ++$i, 
-                $count, 
+
+            WP_CLI::log( sprintf(
+                "[%d/%d] ID: %-7d | Source: %-8s | ZIP: %s | Addr: %s",
+                ++$i,
+                $count,
                 $sub_id,
                 $prefix,
                 $subscription->{"get_{$prefix}_postcode"}(),
