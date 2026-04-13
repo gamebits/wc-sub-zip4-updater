@@ -31,7 +31,7 @@ You'll need a USPS API client key and secret, both of which are available from t
 
 Provide these credentials in lines 16–17 of the script.
 
-### API limits
+### API & server limits
 
 As of January 2026, USPS API calls are rate-limited to [60 per hour](https://www.smarty.com/blog/usps-api-rate-limit). To ensure this limit is not exceeded (which would cause the API key to be blocked), the script pauses for 62 seconds between each query. If you are one of the elite few who has a higher threshold on your developer account, this rate can be adjusted on line 82.
 
@@ -39,7 +39,7 @@ This means even a small database of a few hundred subscribers will take hours to
 
 The script estimates its total run time prior to beginning:
 
-> `### LIVE MODE [Target: ACTIVE ONLY] ###`
+> `### LIVE MODE [Target: ACTIVE ONLY] ###`  
 > `Batch Size: 500 | Estimated Completion: 8h 37m`
 
 Fortunately, the script can be run in batches, picking up where it left off.
