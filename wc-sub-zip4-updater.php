@@ -122,7 +122,7 @@ function run_usps_updater() {
          */
         WP_CLI::line( "### LIVE MODE [Target: $status_label] ###" );
         WP_CLI::line( "Batch Size: $count | Estimated Completion: {$hours}h {$minutes}m" );
-        WP_CLI::confirm( "Proceed with updates?", true );
+        WP_CLI::confirm( "Proceed with updates?", false );
 
         $token_auth = wp_remote_post( 'https://apis.usps.com/oauth2/v3/token', [
             'body' => [ 'grant_type' => 'client_credentials', 'client_id' => $client_id, 'client_secret' => $client_secret ]
@@ -145,9 +145,15 @@ function run_usps_updater() {
             $is_shipping = ! empty( $subscription->get_shipping_address_1() );
             $prefix      = $is_shipping ? 'shipping' : 'billing';
 
+            // USPS API FIXES:
+            // 1. Remove "." from Address 1 (e.g., "Dr." -> "Dr")
+            // 2. Remove "#" from Address 2 (e.g., "#133" -> "133")
+            $clean_addr1 = str_replace('.', '', $subscription->{"get_{$prefix}_address_1"}());
+            $clean_addr2 = str_replace('#', '', $subscription->{"get_{$prefix}_address_2"}());
+
             $query_args = [
-                'streetAddress'    => $subscription->{"get_{$prefix}_address_1"}(),
-                'secondaryAddress' => $subscription->{"get_{$prefix}_address_2"}(),
+                'streetAddress'    => $clean_addr1,
+                'secondaryAddress' => $clean_addr2,
                 'city'             => $subscription->{"get_{$prefix}_city"}(),
                 'state'            => $subscription->{"get_{$prefix}_state"}(),
                 'ZIPCode'          => $subscription->{"get_{$prefix}_postcode"}(),
@@ -188,5 +194,4 @@ function run_usps_updater() {
     }
 }
 
-// Fixed the function call name here
 run_usps_updater();
