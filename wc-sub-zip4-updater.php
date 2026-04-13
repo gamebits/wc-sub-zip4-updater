@@ -1,9 +1,9 @@
 <?php
+
 /**
  * Multi-Target USPS ZIP+4 Updater for HPOS.
- * Updated: Standardized ZIP tracking and final report summary.
  */
-function run_usps_updater_v6() {
+function run_usps_updater() {
     global $wpdb;
 
     // --- MANUAL CONFIGURATION ---
@@ -11,7 +11,7 @@ function run_usps_updater_v6() {
     $target_mode    = 1;      
 
     // true = Full Audit (No changes) | false = Live Updates
-    $is_dry_run     = true;   
+    $is_dry_run     = false;   
 
     $client_id     = 'CLIENT_ID';
     $client_secret = 'CLIENT_SECRET';
@@ -35,19 +35,31 @@ function run_usps_updater_v6() {
             break;
     }
 
-    // 2. Fetch IDs needing updates (5-digit)
+    /**
+     * 2. Fetch IDs needing updates (5-digit)
+     * SQL logic: Target shipping row if it exists/not empty, otherwise target billing.
+     * Only include the ID if that specific priority row is 5-digits (no hyphen).
+     */
     $subscription_ids = $wpdb->get_col("
-        SELECT DISTINCT o.id 
+        SELECT DISTINCT o.id
         FROM {$wpdb->prefix}wc_orders o
         INNER JOIN {$wpdb->prefix}wc_order_addresses oa ON o.id = oa.order_id
         WHERE o.type = 'shop_subscription'
         $status_sql
         AND oa.country = 'US'
         AND oa.postcode REGEXP '^[0-9]{5}$'
+        AND oa.postcode NOT LIKE '%-%'
+        AND (
+            (oa.address_type = 'shipping' AND oa.address_1 != '') 
+            OR 
+            (oa.address_type = 'billing' AND NOT EXISTS (
+                SELECT 1 FROM {$wpdb->prefix}wc_order_addresses 
+                WHERE order_id = o.id AND address_type = 'shipping' AND address_1 != ''
+            ))
+        )
     ");
 
-    // 3. Count existing ZIP+4 (Standardized)
-    // This looks for postcodes that already contain a hyphen.
+    // 3. Count existing ZIP+4 (Standardized) based on the same priority logic
     $already_standardized_count = $wpdb->get_var("
         SELECT COUNT(DISTINCT o.id) 
         FROM {$wpdb->prefix}wc_orders o
@@ -56,6 +68,14 @@ function run_usps_updater_v6() {
         $status_sql
         AND oa.country = 'US'
         AND oa.postcode LIKE '%-%'
+        AND (
+            (oa.address_type = 'shipping' AND oa.address_1 != '') 
+            OR 
+            (oa.address_type = 'billing' AND NOT EXISTS (
+                SELECT 1 FROM {$wpdb->prefix}wc_order_addresses 
+                WHERE order_id = o.id AND address_type = 'shipping' AND address_1 != ''
+            ))
+        )
     ");
 
     $count = count( $subscription_ids );
@@ -68,6 +88,7 @@ function run_usps_updater_v6() {
          * --- PATH A: FULL AUDIT ---
          */
         WP_CLI::line( "### FULL AUDIT [Target: $status_label] ###" );
+        WP_CLI::line( "Priority: Shipping Address (Billing Fallback)" );
         WP_CLI::line( "Standardized (Already ZIP+4): $already_standardized_count" );
         WP_CLI::line( "Pending Update (5-digit):     $count" );
         WP_CLI::line( "Estimated Live Run Time:      {$hours}h {$minutes}m" );
@@ -82,16 +103,17 @@ function run_usps_updater_v6() {
             $prefix      = $is_shipping ? 'shipping' : 'billing';
             
             WP_CLI::log( sprintf( 
-                "[%d/%d] ID: %-7d | ZIP: %s | Addr: %s", 
+                "[%d/%d] ID: %-7d | Source: %-8s | ZIP: %s | Addr: %s", 
                 ++$i, 
                 $count, 
-                $sub_id, 
+                $sub_id,
+                $prefix,
                 $subscription->{"get_{$prefix}_postcode"}(),
                 $subscription->{"get_{$prefix}_address_1"}()
             ) );
         }
         WP_CLI::line( "------------------------------------------------------" );
-        WP_CLI::success( "Found $count subscriptions to be updated and skipped $already_standardized_count subscriptions that already have ZIP+4.)" );
+        WP_CLI::success( "Found $count subscriptions to be updated, and skipped $already_standardized_count subscriptions that already have ZIP+4." );
         return;
 
     } else {
@@ -99,7 +121,6 @@ function run_usps_updater_v6() {
          * --- PATH B: LIVE UPDATES ---
          */
         WP_CLI::line( "### LIVE MODE [Target: $status_label] ###" );
-        WP_CLI::line( "Skipping $already_standardized_count subscriptions that are already standardized." );
         WP_CLI::line( "Batch Size: $count | Estimated Completion: {$hours}h {$minutes}m" );
         WP_CLI::confirm( "Proceed with updates?", true );
 
@@ -154,7 +175,7 @@ function run_usps_updater_v6() {
             WP_CLI::log( sprintf( "[%d/%d] %s", ++$processed, $count, $msg ) );
             if ($log_handle) {
                 fwrite($log_handle, $msg);
-                fflush($log_handle); // Force the write now
+                fflush($log_handle);
             }
 
             unset( $subscription );
@@ -163,8 +184,9 @@ function run_usps_updater_v6() {
         }
 
         if ( $log_handle ) fclose( $log_handle );
-        WP_CLI::success( "Live processing finished. ($already_standardized_count subscriptions were already standardized.)" );
+        WP_CLI::success( "Live processing finished." );
     }
 }
 
-run_usps_updater_v6();
+// Fixed the function call name here
+run_usps_updater();

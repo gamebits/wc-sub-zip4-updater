@@ -1,6 +1,6 @@
 # WooCommerce Subscriptions ZIP+4 Updater
 
-This WordPress script identifies any USA-based [WooCommerce Subscriptions](https://woocommerce.com/products/woocommerce-subscriptions/), then queries the [USPS Address Validation API](https://developers.usps.com/addressesv3) to update the subscription's mailing address to use the [ZIP+4](https://tools.usps.com/zip-code-lookup.htm?byaddress) format.
+This WordPress script identifies any USA-based [WooCommerce Subscriptions](https://woocommerce.com/products/woocommerce-subscriptions/), then queries the [USPS Address Validation API](https://developers.usps.com/addressesv3) to update the subscription's mailing address to use the [ZIP+4](https://tools.usps.com/zip-code-lookup.htm?byaddress) format. It updates the shipping address only, unless there isn't one, in which case it updates the billing address.
 
 ## But why?
 
@@ -33,7 +33,7 @@ Provide these credentials in lines 16–17 of the script.
 
 ### API limits
 
-As of January 2026, USPS API calls are rate-limited to [60 per hour](https://www.smarty.com/blog/usps-api-rate-limit). To ensure this limit is not exceeded (which would cause the API key to be blocked), the script pauses for 62 seconds between each query. If you are one of the elite few who has a higher threshold on your developer account, this rate can be adjusted on line 62.
+As of January 2026, USPS API calls are rate-limited to [60 per hour](https://www.smarty.com/blog/usps-api-rate-limit). To ensure this limit is not exceeded (which would cause the API key to be blocked), the script pauses for 62 seconds between each query. If you are one of the elite few who has a higher threshold on your developer account, this rate can be adjusted on line 82.
 
 Unfortunately, since most users will be rate-limited, this does mean updating 600 subscribers would take over 10 hours. Fortunately, the script can be run in batches, picking up where it left off.
 
