@@ -11,7 +11,7 @@ function run_usps_updater() {
     $target_mode    = 1;
 
     // true = Full Audit (No changes) | false = Live Updates
-    $is_dry_run     = false;
+    $is_dry_run     = true;
 
     $client_id     = 'CLIENT_ID';
     $client_secret = 'CLIENT_SECRET';
