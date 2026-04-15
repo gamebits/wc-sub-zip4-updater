@@ -18,20 +18,21 @@ function run_usps_updater() {
 	$log_file = '/tmp/usps_update_log.txt';
     // ----------------------------
 
-    // 1. Define Status SQL
+// 1. Define Status SQL
+
     switch ( $target_mode ) {
         case 1:
             $status_label = "ACTIVE ONLY";
             $status_sql   = "AND o.status = 'wc-active'";
             break;
         case 2:
-            $status_label = "NON-ACTIVE ONLY";
-            $status_sql   = "AND o.status NOT IN ('wc-active', 'wc-pending')";
+            $status_label = "NON-ACTIVE (Including Pending)";
+            $status_sql   = "AND o.status != 'wc-active'";
             break;
         case 3:
         default:
-            $status_label = "ALL (Active & Non-Active)";
-            $status_sql   = "AND o.status != 'wc-pending'";
+            $status_label = "ALL (Active, Non-Active & Pending)";
+            $status_sql   = ""; 
             break;
     }
 
