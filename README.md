@@ -89,7 +89,6 @@ The following script can identify many active subscriptions that have informatio
 <?php
 /**
  * Passive Audit: Identifies ACTIVE US subscriptions with Unit Info in Address 1.
- * Logic: Uses word boundaries to avoid false positives like "Flower" or "Sterling."
  */
 function audit_active_unit_issues_v2() {
     global $wpdb;
@@ -134,6 +133,12 @@ function audit_active_unit_issues_v2() {
 audit_active_unit_issues_v2();
 ```
 
+## Ongoing fixes
+
+This script is best run once to standardize all existing addresses in your database. To automatically update all new orders as they are made, add `standardize-zip4.php` to a plugin such as [Code Snippets](https://wordpress.org/plugins/code-snippets/). USA-based orders will have their ZIP codes standardized using the ZIP+4 format, and a private note will be added to eligible customers' orders, indicating that this change was made. (This process slows down the checkout experience by about one second.)
+
+Be careful when using this code on high-traffic sites, as this script can also max out your USPS API limits if you receive more than 60 orders an hour.
+
 ## Credit
 
-This script was entirely vibecoded with [Google Gemini](https://gemini.google.com/) by Ken Gagne and is available under a GNU General Public License (GPL) v2.0.
+These scripts were entirely vibecoded with [Google Gemini](https://gemini.google.com/) by Ken Gagne and is available under a GNU General Public License (GPL) v2.0.
