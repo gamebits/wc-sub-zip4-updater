@@ -23,7 +23,7 @@ Plugins exist to validate addresses when orders are submitted, whereas this scri
 
 ## Configuration
 
-Before running the script, configure it to your specifications:
+Before running `wc-sub-zip4-updater.php`, configure it to your specifications:
 
 ### USPS API
 
