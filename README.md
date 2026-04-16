@@ -93,4 +93,4 @@ Be careful when using this code on high-traffic sites, as this script can also m
 
 ## Credit
 
-These scripts were entirely vibecoded with [Google Gemini](https://gemini.google.com/) by Ken Gagne and is available under a GNU General Public License (GPL) v2.0.
+These scripts were entirely vibecoded with [Google Gemini](https://gemini.google.com/) by Ken Gagne and are available under a GNU General Public License (GPL) v2.0.
