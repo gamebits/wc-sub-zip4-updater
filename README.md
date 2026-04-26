@@ -87,7 +87,7 @@ The `secondary-address-scan.php` script can identify many active subscriptions t
 
 ## Ongoing fixes
 
-This script is best run once to standardize all existing addresses in your database. To automatically update all new orders as they are made, add `standardize-zip4.php` to your `functions.php` file or to a custom plugin (or import `standardize-zip4.json` to [Code Snippets](https://wordpress.org/plugins/code-snippets/)\). USA-based orders will have their ZIP codes standardized using the ZIP+4 format, and a private note will be added to eligible customers' orders, indicating that this change was made. (This process slows down the checkout experience by about one second.)
+This script is best run once to standardize all existing addresses in your database. To automatically update all new orders and address updates as they are submitted, add `standardize-zip4.php` to your `functions.php` file or to a custom plugin (or import `standardize-zip4.json` to [Code Snippets](https://wordpress.org/plugins/code-snippets/)\). USA-based orders will have their ZIP codes standardized using the ZIP+4 format, and a private note will be added to eligible customers' orders, indicating that this change was made. (This process slows down the checkout experience by about one second.)
 
 Be careful when using this code on high-traffic sites, as this script can also max out your USPS API limits if you receive more than 60 orders an hour.
 
