@@ -2,6 +2,8 @@
 
 This WordPress script identifies any USA-based [WooCommerce Subscriptions](https://woocommerce.com/products/woocommerce-subscriptions/), then queries the [USPS Address Validation API](https://developers.usps.com/addressesv3) to update the subscription's mailing address to use the [ZIP+4](https://tools.usps.com/zip-code-lookup.htm?byaddress) format. It updates the shipping address only, unless there isn't one, in which case it updates the billing address.
 
+An additional script can be added to your codebase to update to ensure all new orders and addresses also use ZIP+4.
+
 ## But why?
 
 Standard five-digit ZIP codes are efficient, but the ZIP+4 system (introduced by the United States Postal Service in [1983](https://facts.usps.com/decoding-the-zip-code/)) acts as a high-definition GPS for mail sorting. While mail will usually arrive with just five digits, the extra four digits significantly optimize the "last mile" of delivery.
@@ -87,7 +89,7 @@ The `secondary-address-scan.php` script can identify many active subscriptions t
 
 ## Ongoing fixes
 
-This script is best run once to standardize all existing addresses in your database. To automatically update all new orders and address updates as they are submitted, add `standardize-zip4.php` to your `functions.php` file or to a custom plugin (or import `standardize-zip4.json` to [Code Snippets](https://wordpress.org/plugins/code-snippets/)\). USA-based orders will have their ZIP codes standardized using the ZIP+4 format, and a private note will be added to eligible customers' orders, indicating that this change was made. (This process slows down the checkout experience by about one second.)
+This script is best run once to standardize all existing addresses in your database. To automatically update all new orders and address updates as they are submitted, add `standardize-zip4.php` to your `functions.php` file or to a custom plugin (or import `standardize-zip4.json` to [Code Snippets](https://wordpress.org/plugins/code-snippets/)\), being sure to add your client key and secret. USA-based orders and customers will have their ZIP codes standardized using the ZIP+4 format, and a private note will be added to eligible customers' orders, indicating that this change was made. (This process slows down the checkout experience by about one second.)
 
 Be careful when using this code on high-traffic sites, as this script can also max out your USPS API limits if you receive more than 60 orders an hour.
 
