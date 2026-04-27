@@ -2,7 +2,7 @@
 
 This WordPress script identifies any USA-based [WooCommerce Subscriptions](https://woocommerce.com/products/woocommerce-subscriptions/), then queries the [USPS Address Validation API](https://developers.usps.com/addressesv3) to update the subscription's mailing address to use the [ZIP+4](https://tools.usps.com/zip-code-lookup.htm?byaddress) format. It updates the shipping address only, unless there isn't one, in which case it updates the billing address.
 
-An additional script can be added to your codebase to update to ensure all new orders and addresses also use ZIP+4.
+An additional script can be added to your codebase to ensure all new orders and addresses also use ZIP+4.
 
 ## But why?
 
