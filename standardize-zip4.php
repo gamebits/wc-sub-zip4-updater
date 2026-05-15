@@ -118,3 +118,27 @@ function zip4_handle_profile_update_standardization( $user_id, $address_type ) {
         update_user_meta( $user_id, $address_type . '_postcode', $new_zip );
     }
 }
+
+/**
+ * 4. TRIGGER: SUBSCRIPTION UPDATES
+ * Standardizes the ZIP on the actual subscription object when a user edits their address.
+ */
+add_action( 'woocommerce_subscription_address_updated', 'zip4_handle_subscription_update_standardization', 10, 3 );
+function zip4_handle_subscription_update_standardization( $subscription, $new_address, $address_type ) {
+    $country = $new_address['country'] ?? '';
+
+    $new_zip = zip4_standardize_usps_zip(
+        $new_address['address_1'] ?? '',
+        $new_address['address_2'] ?? '',
+        $new_address['city'] ?? '',
+        $new_address['state'] ?? '',
+        $new_address['postcode'] ?? '',
+        $country
+    );
+
+    if ( strpos( $new_zip, '-' ) !== false ) {
+        $subscription->{"set_{$address_type}_postcode"}( $new_zip );
+        $subscription->save();
+        $subscription->add_order_note( "USPS: Subscription ZIP standardized to $new_zip" );
+    }
+}
