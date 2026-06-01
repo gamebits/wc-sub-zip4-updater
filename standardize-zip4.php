@@ -23,8 +23,8 @@ function zip4_standardize_usps_zip( $addr1, $addr2, $city, $state, $zip, $countr
     $token_auth = wp_remote_post( 'https://apis.usps.com/oauth2/v3/token', [
         'body' => [
             'grant_type'    => 'client_credentials',
-            'client_id'     => '$client_id',
-            'client_secret' => '$client_secret'
+            'client_id'     => $client_id,
+            'client_secret' => $client_secret
         ]
     ]);
    
