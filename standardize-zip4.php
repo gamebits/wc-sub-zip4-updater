@@ -21,13 +21,13 @@ function zip4_standardize_usps_zip( $addr1, $addr2, $city, $state, $zip, $countr
 
     // Get USPS Access Token
     $token_auth = wp_remote_post( 'https://apis.usps.com/oauth2/v3/token', [
-        'body' => [ 
-            'grant_type'    => 'client_credentials', 
-            'client_id'     => $client_id, 
-            'client_secret' => $client_secret 
+        'body' => [
+            'grant_type'    => 'client_credentials',
+            'client_id'     => $client_id,
+            'client_secret' => $client_secret
         ]
     ]);
-    
+   
     $token_data   = json_decode( wp_remote_retrieve_body( $token_auth ) );
     $access_token = $token_data->access_token ?? false;
 
@@ -50,16 +50,16 @@ function zip4_standardize_usps_zip( $addr1, $addr2, $city, $state, $zip, $countr
 
     // Call USPS API with a timeout to prevent checkout hanging
     $response = wp_remote_get( add_query_arg( $query_args, 'https://apis.usps.com/addresses/v3/address' ), [
-        'headers' => [ 
-            'Authorization' => 'Bearer ' . $access_token, 
-            'Accept'        => 'application/json' 
+        'headers' => [
+            'Authorization' => 'Bearer ' . $access_token,
+            'Accept'        => 'application/json'
         ],
-        'timeout' => 7 
+        'timeout' => 7
     ]);
 
     if ( ! is_wp_error( $response ) ) {
         $result = json_decode( wp_remote_retrieve_body( $response ) );
-        
+       
         if ( isset( $result->address->ZIPPlus4 ) && ! empty( $result->address->ZIPPlus4 ) ) {
             return $result->address->ZIPCode . '-' . $result->address->ZIPPlus4;
         }
@@ -71,15 +71,16 @@ function zip4_standardize_usps_zip( $addr1, $addr2, $city, $state, $zip, $countr
 
 /**
  * 2. TRIGGER: NEW ORDERS (CHECKOUT)
- * Uses woocommerce_checkout_create_order to modify the order object before it's saved.
+ * Updates BOTH the order object and the customer's permanent profile during checkout.
  */
+
+// Part A: Update the Order Object before saving
 add_action( 'woocommerce_checkout_create_order', 'zip4_handle_checkout_standardization', 10, 2 );
 function zip4_handle_checkout_standardization( $order, $data ) {
     if ( ! $order ) return;
 
-    // Prioritize shipping address; fall back to billing if shipping is empty
     $prefix = ! empty( $order->get_shipping_address_1() ) ? 'shipping' : 'billing';
-    
+   
     $new_zip = zip4_standardize_usps_zip(
         $order->{"get_{$prefix}_address_1"}(),
         $order->{"get_{$prefix}_address_2"}(),
@@ -89,10 +90,35 @@ function zip4_handle_checkout_standardization( $order, $data ) {
         $order->{"get_{$prefix}_country"}()
     );
 
-    // Update the order object if a ZIP+4 was returned
     if ( strpos( $new_zip, '-' ) !== false ) {
         $order->{"set_{$prefix}_postcode"}( $new_zip );
-        $order->add_order_note( "USPS: ZIP standardized to $new_zip" );
+        $order->add_order_note( "USPS: Order ZIP standardized to $new_zip" );
+    }
+}
+
+// Part B: Update the User Profile metadata during the checkout save process
+add_action( 'woocommerce_checkout_update_user_meta', 'zip4_handle_checkout_profile_standardization', 10, 2 );
+function zip4_handle_checkout_profile_standardization( $user_id, $posted_data ) {
+    if ( ! $user_id ) return;
+
+    // Prioritize shipping data; fallback to billing if shipping line 1 is missing
+    $prefix = ! empty( $posted_data['shipping_address_1'] ) ? 'shipping' : 'billing';
+   
+    // Check if country data exists in the form submission
+    $country = $posted_data[$prefix . '_country'] ?? 'US';
+
+    $new_zip = zip4_standardize_usps_zip(
+        $posted_data[$prefix . '_address_1'] ?? '',
+        $posted_data[$prefix . '_address_2'] ?? '',
+        $posted_data[$prefix . '_city'] ?? '',
+        $posted_data[$prefix . '_state'] ?? '',
+        $posted_data[$prefix . '_postcode'] ?? '',
+        $country
+    );
+
+    if ( strpos( $new_zip, '-' ) !== false ) {
+        // Force the standardized ZIP code straight into the user's metadata
+        update_user_meta( $user_id, $prefix . '_postcode', $new_zip );
     }
 }
 
