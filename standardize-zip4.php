@@ -21,13 +21,13 @@ function zip4_standardize_usps_zip( $addr1, $addr2, $city, $state, $zip, $countr
 
     // Get USPS Access Token
     $token_auth = wp_remote_post( 'https://apis.usps.com/oauth2/v3/token', [
-        'body' => [ 
-            'grant_type'    => 'client_credentials', 
-            'client_id'     = $client_id, 
-            'client_secret' = $client_secret 
+        'body' => [
+            'grant_type'    => 'client_credentials',
+            'client_id'     => '$client_id',
+            'client_secret' => '$client_secret'
         ]
     ]);
-    
+   
     $token_data   = json_decode( wp_remote_retrieve_body( $token_auth ) );
     $access_token = $token_data->access_token ?? false;
 
@@ -50,16 +50,16 @@ function zip4_standardize_usps_zip( $addr1, $addr2, $city, $state, $zip, $countr
 
     // Call USPS API with a timeout to prevent checkout hanging
     $response = wp_remote_get( add_query_arg( $query_args, 'https://apis.usps.com/addresses/v3/address' ), [
-        'headers' => [ 
-            'Authorization' => 'Bearer ' . $access_token, 
-            'Accept'        => 'application/json' 
+        'headers' => [
+            'Authorization' => 'Bearer ' . $access_token,
+            'Accept'        => 'application/json'
         ],
-        'timeout' => 7 
+        'timeout' => 7
     ]);
 
     if ( ! is_wp_error( $response ) ) {
         $result = json_decode( wp_remote_retrieve_body( $response ) );
-        
+       
         if ( isset( $result->address->ZIPPlus4 ) && ! empty( $result->address->ZIPPlus4 ) ) {
             return $result->address->ZIPCode . '-' . $result->address->ZIPPlus4;
         }
@@ -80,7 +80,7 @@ function zip4_handle_checkout_standardization( $order, $data ) {
     if ( ! $order ) return;
 
     $prefix = ! empty( $order->get_shipping_address_1() ) ? 'shipping' : 'billing';
-    
+   
     $new_zip = zip4_standardize_usps_zip(
         $order->{"get_{$prefix}_address_1"}(),
         $order->{"get_{$prefix}_address_2"}(),
@@ -103,7 +103,7 @@ function zip4_handle_checkout_profile_standardization( $user_id, $posted_data ) 
 
     // Prioritize shipping data; fallback to billing if shipping line 1 is missing
     $prefix = ! empty( $posted_data['shipping_address_1'] ) ? 'shipping' : 'billing';
-    
+   
     // Check if country data exists in the form submission
     $country = $posted_data[$prefix . '_country'] ?? 'US';
 
