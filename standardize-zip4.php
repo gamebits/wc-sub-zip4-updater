@@ -5,6 +5,13 @@
  * Returns ZIP+4 or original ZIP if match/auth fails.
  */
 
+if ( ! function_exists( 'zip4_get_usps_credentials' ) ) {
+	$credentials_file = __DIR__ . '/zip4-usps-credentials.php';
+	if ( is_readable( $credentials_file ) ) {
+		require_once $credentials_file;
+	}
+}
+
 /**
  * 1. CENTRAL HELPER FUNCTION
  * Handles API authentication, domestic check, and address standardization.
@@ -15,9 +22,13 @@ function zip4_standardize_usps_zip( $addr1, $addr2, $city, $state, $zip, $countr
         return $zip;
     }
 
-    // USPS API Credentials
-    $client_id     = 'YOUR_CLIENT_ID';
-    $client_secret = 'YOUR_CLIENT_SECRET';
+    $credentials = zip4_get_usps_credentials();
+    if ( ! $credentials ) {
+        return $zip;
+    }
+
+    $client_id     = $credentials['client_id'];
+    $client_secret = $credentials['client_secret'];
 
     // Get USPS Access Token
     $token_auth = wp_remote_post( 'https://apis.usps.com/oauth2/v3/token', [
