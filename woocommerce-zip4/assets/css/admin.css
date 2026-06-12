@@ -1,0 +1,38 @@
+.woocommerce-zip4-admin__content {
+	margin-top: 1.5rem;
+}
+
+.woocommerce-zip4-admin__progress {
+	margin-top: 1.5rem;
+	padding: 1rem 1.25rem;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left-width: 4px;
+	border-left-color: #2271b1;
+}
+
+.woocommerce-zip4-admin__progress-count {
+	font-size: 1.1rem;
+	margin: 0 0 0.75rem;
+}
+
+.woocommerce-zip4-admin__progress-status {
+	margin: 0 0 0.75rem;
+	color: #50575e;
+}
+
+.woocommerce-zip4-admin__progress-log {
+	margin: 0;
+	padding-left: 1.25rem;
+	max-height: 240px;
+	overflow-y: auto;
+}
+
+.woocommerce-zip4-admin__progress-log li {
+	margin-bottom: 0.35rem;
+}
+
+.woocommerce-zip4-admin.is-processing #wc-zip4-process-subscriptions {
+	opacity: 0.6;
+	pointer-events: none;
+}
