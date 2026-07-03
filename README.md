@@ -29,9 +29,19 @@ Before running `wc-sub-zip4-updater.php`, configure it to your specifications:
 
 ### USPS API
 
-You'll need a USPS API client key and secret, both of which are available from the [USPS Developer Portal](https://developers.usps.com/user/apps). If you are already using the [USPS Shipping Method](https://woocommerce.com/products/usps-shipping-method/) extension for WooCommerce, then you likely already have these credentials at `/wp-admin/admin.php?page=wc-settings&tab=shipping&section=usps`.
+You'll need a USPS API client key and secret, both of which are available from the [USPS Developer Portal](https://developers.usps.com/user/apps).
 
-Provide these credentials in lines 16–17 of the script.
+These scripts read credentials automatically — you no longer paste them into the PHP files. Provide them using one of these methods:
+
+1. **WooCommerce USPS Shipping Method (recommended)** — If the [USPS Shipping Method](https://woocommerce.com/products/usps-shipping-method/) extension is installed, active, and configured with REST API credentials at `/wp-admin/admin.php?page=wc-settings&tab=shipping&section=usps`, the scripts reuse those settings.
+2. **`wp-config.php` constants** — If the plugin is not available, add the following to `wp-config.php` (above the "That's all, stop editing!" line):
+
+```php
+define( 'USPS_CLIENT_ID', 'your-client-id' );
+define( 'USPS_CLIENT_SECRET', 'your-client-secret' );
+```
+
+When using the batch updater, upload both `wc-sub-zip4-updater.php` and `zip4-usps-credentials.php` to the same directory. The checkout script requires `zip4-usps-credentials.php` alongside `standardize-zip4.php` as well.
 
 ### API & server limits
 
@@ -75,7 +85,7 @@ To perform a live run that updates the addresses, change line 14 from `true` to 
 
 ## Usage
 
-Take a backup of your database, then upload the script via SFTP or nano to your shell environment and execute it with this WP-CLI command:
+Take a backup of your database, then upload `wc-sub-zip4-updater.php` and `zip4-usps-credentials.php` via SFTP or nano to your shell environment and execute it with this WP-CLI command:
 
 `wp eval-file wc-sub-zip4-updater.php`
 
@@ -89,7 +99,7 @@ The `secondary-address-scan.php` script can identify many active subscriptions t
 
 ## Ongoing fixes
 
-This script is best run once to standardize all existing addresses in your database. To automatically update all new orders and address updates as they are submitted, add `standardize-zip4.php` to your `functions.php` file or to a custom plugin (or import `standardize-zip4.json` to [Code Snippets](https://wordpress.org/plugins/code-snippets/)\), being sure to add your client key and secret. USA-based orders and customers will have their ZIP codes standardized using the ZIP+4 format, and a private note will be added to eligible customers' orders, indicating that this change was made. (This process slows down the checkout experience by about one second.)
+This script is best run once to standardize all existing addresses in your database. To automatically update all new orders and address updates as they are submitted, add `standardize-zip4.php` and `zip4-usps-credentials.php` to your `functions.php` file or to a custom plugin (or import `standardize-zip4.json` to [Code Snippets](https://wordpress.org/plugins/code-snippets/)\)). Configure USPS credentials via the WooCommerce USPS Shipping Method plugin or `wp-config.php` constants as described above. USA-based orders and customers will have their ZIP codes standardized using the ZIP+4 format, and a private note will be added to eligible customers' orders, indicating that this change was made. (This process slows down the checkout experience by about one second.)
 
 Be careful when using this code on high-traffic sites, as this script can also max out your USPS API limits if you receive more than 60 orders an hour.
 

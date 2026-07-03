@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/zip4-usps-credentials.php';
+
 /**
  * Multi-Target USPS ZIP+4 Updater for HPOS.
  */
@@ -13,8 +15,6 @@ function run_usps_updater() {
     // true = Full Audit (No changes) | false = Live Updates
     $is_dry_run     = true;
 
-    $client_id     = 'CLIENT_ID';
-    $client_secret = 'CLIENT_SECRET';
 	$log_file = '/tmp/usps_update_log.txt';
     // ----------------------------
 
@@ -124,6 +124,18 @@ function run_usps_updater() {
         WP_CLI::line( "### LIVE MODE [Target: $status_label] ###" );
         WP_CLI::line( "Batch Size: $count | Estimated Completion: {$hours}h {$minutes}m" );
         WP_CLI::confirm( "Proceed with updates?", false );
+
+        $credentials = zip4_get_usps_credentials();
+        if ( ! $credentials ) {
+            WP_CLI::error(
+                'USPS credentials not found. Configure the WooCommerce USPS Shipping Method plugin ' .
+                '(REST API Key and Secret), or define USPS_CLIENT_ID and USPS_CLIENT_SECRET in wp-config.php.'
+            );
+            return;
+        }
+
+        $client_id     = $credentials['client_id'];
+        $client_secret = $credentials['client_secret'];
 
         $token_auth = wp_remote_post( 'https://apis.usps.com/oauth2/v3/token', [
             'body' => [ 'grant_type' => 'client_credentials', 'client_id' => $client_id, 'client_secret' => $client_secret ]
